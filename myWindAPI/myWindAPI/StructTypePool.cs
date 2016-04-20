@@ -7,6 +7,18 @@ using System.Threading.Tasks;
 namespace myWindAPI
 {
     /// <summary>
+    /// 存储商品期货基本信息的结构体。
+    /// </summary>
+    struct commodityFormat
+    {
+        public string contractName;
+        public string code;
+        public string market;
+        public int startDate;
+        public int endDate;
+    }
+    
+    /// <summary>
     /// 存储期权基本信息的结构体。
     /// </summary>
     struct optionFormat

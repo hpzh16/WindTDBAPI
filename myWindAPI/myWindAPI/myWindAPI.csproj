@@ -73,6 +73,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MyApplication.cs" />
     <Compile Include="CommodityData.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="CsvApplication.cs" />

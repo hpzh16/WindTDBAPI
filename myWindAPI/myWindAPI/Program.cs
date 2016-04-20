@@ -41,6 +41,12 @@
 时间：2016-04-13
 版本：v1.0.5
 #######################################################
+1、更新商品期货数据存储的类。
+2、设计数据库自动生成。
+作者：毛衡
+时间：2016-04-20
+版本：v1.1.0
+#######################################################
 **/
 
 using System;
@@ -58,11 +64,7 @@ namespace myWindAPI
     {
         static void Main(string[] args)
         {
-            //WindTDBData myTDBData = new WindTDBData("sh", 20160301, 20160331, "50etf");
-            //WindTDBData myTDBData2 = new WindTDBData("sh", 20160101, 20160331, "option");
-            //WindTDBData myTDBData3 = new WindTDBData("CFE", 20160101, 20150331, "ih");
-            //WindTDBData myTDBData4 = new WindTDBData("sh", 20160301, 20160331, "50etfOrder");
-            WindTDBData myTDBData5 = new WindTDBData("dce", 20100501, 20151231, "commodity");
+            CommodityData myStore = new CommodityData("DCE", 20130401, 20160430);
         }
     }
 }
