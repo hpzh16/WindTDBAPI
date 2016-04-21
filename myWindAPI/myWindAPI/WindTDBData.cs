@@ -87,6 +87,10 @@ namespace myWindAPI
 
         }
 
+        /// <summary>
+        /// 新建金融期货数据表
+        /// </summary>
+        /// <param name="tableOfFinancialFuture"></param>
         private void CreateTableOfFinancialFuture(string tableOfFinancialFuture)
         {
             using (SqlConnection conn = new SqlConnection(connectString))
@@ -180,14 +184,6 @@ namespace myWindAPI
                     default:
                         break;
                 }
-                switch (market)
-                {
-                    case "dce":
-                        StoreDCECommodity(market);
-                        break;
-                    default:
-                        break;
-                }
             }
             else
             {
@@ -197,16 +193,6 @@ namespace myWindAPI
             //工作完毕之后，关闭万德TDB数据库的连接。
             //关闭连接
             tdbSource.DisConnect();
-        }
-
-        public void StoreDCECommodity(string market)
-        {
-            TDBCode[] codeArr;
-            tdbSource.GetCodeTable(market, out codeArr);
-            TDBReqFuture reqFuture = new TDBReqFuture("a.DCE", 20130101,20130531);
-            TDBFutureAB[] futureABArr;
-            reqFuture.m_nAutoComplete = 0;
-            TDBErrNo nErrInner = tdbSource.GetFutureAB(reqFuture, out futureABArr);
         }
 
         /// <summary>

@@ -47,6 +47,12 @@
 时间：2016-04-20
 版本：v1.1.0
 #######################################################
+1、完成将商品期货数据落到本地数据库的工作。
+2、记录过程的日志文本。
+作者：毛衡
+时间：2016-04-21
+版本：v1.1.1
+#######################################################
 **/
 
 using System;
@@ -64,7 +70,9 @@ namespace myWindAPI
     {
         static void Main(string[] args)
         {
-            CommodityData myStore = new CommodityData("DCE", 20130401, 20160430);
+            CommodityData myStore1 = new CommodityData("DCE", 20130401, 20160430);
+            CommodityData myStore2 = new CommodityData("CZC", 20130401, 20160430);
+            CommodityData myStore3 = new CommodityData("CFE", 20130401, 20160430);
         }
     }
 }

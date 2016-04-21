@@ -18,9 +18,13 @@ namespace myWindAPI
         /// <param name="dataBaseName">数据库名</param>
         /// <param name="tableName">表名</param>
         /// <returns>返回是否存在表</returns>
-        public static bool CheckExist(string dataBaseName,string tableName)
+        public static bool CheckExist(string dataBaseName,string tableName,string connectString="" )
         {
-            using (SqlConnection conn = new SqlConnection(Configuration.connectString))
+            if (connectString=="")
+            {
+                connectString = Configuration.connectString;
+            }
+            using (SqlConnection conn = new SqlConnection(connectString))
             {
                 conn.Open();//打开数据库  
                 SqlCommand cmd = conn.CreateCommand();
