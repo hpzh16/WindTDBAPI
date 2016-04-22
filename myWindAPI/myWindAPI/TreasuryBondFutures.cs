@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ using System.Data;
 
 namespace myWindAPI
 {
-    class CommodityData
+    class TreasuryBondFutures
     {
         /// <summary>
         /// 未指定数据库名称的连接字符串
@@ -18,11 +19,11 @@ namespace myWindAPI
         /// <summary>
         /// 连接万德商品期货TDB数据库的参数。
         /// </summary>
-        public TDBsource mySource = new TDBsource("114.80.154.34", "10060", "TD5928909014", "13305104");
+        public TDBsource mySource = new TDBsource("114.80.154.34", "10061", "TD5928909015", "65580144");
         /// <summary>
         /// 记录全市场商品期货信息的列表。
         /// </summary>
-        public List<commodityFormat> commodityList = new List<commodityFormat>();
+        public List<bondFormat> bondList = new List<bondFormat>();
         /// <summary>
         /// 市场
         /// </summary>
@@ -56,11 +57,11 @@ namespace myWindAPI
         /// <param name="market">市场</param>
         /// <param name="startDate">开始时间</param>
         /// <param name="endDate">结束时间</param>
-        public CommodityData(string market,int startDate,int endDate=0)
+        public TreasuryBondFutures(string market, int startDate, int endDate = 0)
         {
             this.market = market.ToUpper();
             this.startDate = startDate;
-            if (endDate==0)
+            if (endDate == 0)
             {
                 endDate = startDate;
             }
@@ -72,11 +73,12 @@ namespace myWindAPI
                 Console.WriteLine("Connect Success!");
                 myTradeDays = new TradeDays(startDate, endDate);
                 Console.WriteLine("Tradedays Collect!");
-                commodityList = GetCommodityList(market);
-                Console.WriteLine("CommodityList Collect!");
-                logName = DateTime.Now.ToString()+"_log.txt";
+                bondList = GetbondList(market);
+                Console.WriteLine("bondList Collect!");
+                logName = DateTime.Now.ToString() + "_log.txt";
                 logName = logName.Replace("/", "_");
                 logName = logName.Replace(" ", "_");
+                logName = logName.Replace(":", "_");
                 StoreData();
             }
             else
@@ -94,33 +96,51 @@ namespace myWindAPI
         /// </summary>
         public void StoreData()
         {
-            foreach (var commodity in commodityList)
+            foreach (var bond in bondList)
             {
-                string tableName = "MarketData_" + commodity.code + "_" + commodity.market;
+                string tableName = "MarketData_" + bond.code + "_" + bond.market+"E";
+                int maxRecordDate = 0;
                 foreach (int today in myTradeDays.myTradeDays)
                 {
-                    TDBReqFuture reqFuture = new TDBReqFuture(commodity.contractName,today,today);
-                    TDBFutureAB[] futureABArr;
-                    TDBErrNo nErrInner = tdbSource.GetFutureAB(reqFuture, out futureABArr);
-                    if (futureABArr.Length>0)
-                        //若数据存在，存储数据，但要注意上月数据库中的夜盘数据要存到上月的数据库中
+                    if (today > bond.endDate)
+                    //如果在期货交割之后，不再进行记录
                     {
-                        string todayDataBase = "TradeMarket" + (today / 100).ToString();
-                        int yesterday = TradeDays.GetPreviousTradeDay(today);
-                        string yesterdayDataBase = "TradeMarket"+(yesterday/100).ToString();
-                        string todayConnectString = "server=(local);database=" + todayDataBase + ";Integrated Security=true;";
+                        break;
+                    }
+                    int yesterday = TradeDays.GetPreviousTradeDay(today);
+                    string todayDataBase = "TradeMarket" + (today / 100).ToString();
+                    string todayConnectString = "server=(local);database=" + todayDataBase + ";Integrated Security=true;";
+                    if (yesterday / 100 != today / 100 || today == startDate || maxRecordDate == 0)
+                    {
+                        if (SqlApplication.CheckExist(todayDataBase, tableName, todayConnectString) == true)
+                        {
+                            maxRecordDate = MaxRecordDate(tableName, todayConnectString);
+                        }
+                    }
+                    if (maxRecordDate < today)
+                    //若没有记录数据，需要重新记录
+                    //若数据存在，存储数据,否则需要跳过
+                    {
+                        TDBReqFuture reqFuture = new TDBReqFuture(bond.contractName, today, today);
+                        TDBFutureAB[] futureABArr;
+                        TDBErrNo nErrInner = tdbSource.GetFutureAB(reqFuture, out futureABArr);
+                        if (futureABArr.Length == 0)
+                        {
+                            continue;
+                        }
+                        string yesterdayDataBase = "TradeMarket" + (yesterday / 100).ToString();
                         string yesterdayConnectString = "server=(local);database=" + yesterdayDataBase + ";Integrated Security=true;";
-                        if (SqlApplication.CheckDataBaseExist(todayDataBase,orignalConnectString)==false)
-                            //检测当日对应的数据库是否存在
+                        if (SqlApplication.CheckDataBaseExist(todayDataBase, orignalConnectString) == false)
+                        //检测当日对应的数据库是否存在
                         {
                             CreateDataBase(todayDataBase, orignalConnectString);
                         }
-                        if (SqlApplication.CheckExist(todayDataBase, tableName, orignalConnectString)==false)
+                        if (SqlApplication.CheckExist(todayDataBase, tableName, orignalConnectString) == false)
                         {
                             CreateTable(tableName, todayConnectString);
                         }
-                        if (yesterdayDataBase!=todayDataBase)
-                            //如果前一交易日所在月份和当日不同，检测上一个月的数据库是否存在
+                        if (yesterdayDataBase != todayDataBase)
+                        //如果前一交易日所在月份和当日不同，检测上一个月的数据库是否存在
                         {
                             if (SqlApplication.CheckDataBaseExist(yesterdayDataBase, orignalConnectString) == false)
                             {
@@ -132,41 +152,38 @@ namespace myWindAPI
                             }
                         }
                         //判断数据是否已经存储，若数据存在，默认已经记录，仅记录数据条数，写入日志文档，靠人工来校对
-                        int alreadyRecord = CountRecordNumber(tableName, todayConnectString, today);
-                        if (alreadyRecord==0)
-                            //若没有记录数据，需要重新记录
+                        // int alreadyRecord = CountRecordNumber(tableName, todayConnectString, today);
+                        bondShot[] todayData;
+                        bondShot[] yesterdayData;
+                        ModifyData(futureABArr, bond.contractName, out todayData, out yesterdayData);
+                        if (yesterdayData.Length > 0)
                         {
-                            commodityShot[] todayData;
-                            commodityShot[] yesterdayData;
-                            ModifyData(futureABArr, commodity.contractName, out todayData, out yesterdayData);
-                            if (yesterdayData.Length>0)
-                            {
-                                StoreDataDaily(tableName, yesterdayConnectString, yesterdayData);
-                            }
-                            if (todayData.Length>0)
-                            {
-                                StoreDataDaily(tableName, todayConnectString, todayData);
-                            }
-                            Console.WriteLine("Date:{0}, table:{1}, Record:{2}, Wind:{3}", today, tableName, alreadyRecord, futureABArr.Length);
-                            string log = "Date:" + today.ToString() + ", table:" + tableName + ", Record:" + alreadyRecord.ToString() + ", Wind:" + futureABArr.Length.ToString();
-                            MyApplication.TxtWrite(logName, log);
+                            StoreDataDaily(tableName, yesterdayConnectString, yesterdayData);
                         }
-                        else
+                        if (todayData.Length > 0)
                         {
-                            Console.WriteLine("Date:{0}, table:{1}, Record:{2}, Wind:{3}", today, tableName,alreadyRecord, futureABArr.Length);
-                            string log = "Date:" + today.ToString() +", table:"+ tableName+", Record:" + alreadyRecord.ToString() + ", Wind:" + futureABArr.Length.ToString();
-                            MyApplication.TxtWrite(logName, log);
+                            StoreDataDaily(tableName, todayConnectString, todayData);
                         }
+                        Console.WriteLine("Date:{0}, table:{1}, MaxRecordDate:{2}, Wind:{3}", today, tableName, maxRecordDate, futureABArr.Length);
+                        string log = "Date:" + today.ToString() + ", table:" + tableName + ", MaxRecordDate:" + maxRecordDate.ToString() + ", Wind:" + futureABArr.Length.ToString();
+                        MyApplication.TxtWrite(logName, log);
+                        maxRecordDate = today;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Date:{0}, table:{1}, MaxRecordDate:{2}", today, tableName, maxRecordDate);
+                        string log = "Date:" + today.ToString() + ", table:" + tableName + ", MaxRecordDate:" + maxRecordDate.ToString();
+                        MyApplication.TxtWrite(logName, log);
                     }
                 }
             }
-            
+
         }
 
         /// <summary>
         /// 逐日逐品种存储数据。
         /// </summary>
-        public void StoreDataDaily(string tableName,string connectString, commodityShot[] data)
+        public void StoreDataDaily(string tableName, string connectString, bondShot[] data)
         {
             using (SqlConnection conn = new SqlConnection(connectString))
             {
@@ -237,7 +254,7 @@ namespace myWindAPI
 
 
                 #endregion
-                foreach (commodityShot f in data)
+                foreach (bondShot f in data)
                 {
                     #region 将数据写入每一行中。
                     DataRow r = todayData.NewRow();
@@ -247,9 +264,25 @@ namespace myWindAPI
                     r["ttime"] = f.ttime;
                     r["cp"] = f.cp;
                     r["S1"] = f.S1;
+                    r["S2"] = f.S2;
+                    r["S3"] = f.S3;
+                    r["S4"] = f.S4;
+                    r["S5"] = f.S5;
                     r["SV1"] = f.SV1;
+                    r["SV2"] = f.SV2;
+                    r["SV3"] = f.SV3;
+                    r["SV4"] = f.SV4;
+                    r["SV5"] = f.SV5;
                     r["B1"] = f.B1;
+                    r["B2"] = f.B2;
+                    r["B3"] = f.B3;
+                    r["B4"] = f.B4;
+                    r["B5"] = f.B5;
                     r["BV1"] = f.BV1;
+                    r["BV2"] = f.BV2;
+                    r["BV3"] = f.BV3;
+                    r["BV4"] = f.BV4;
+                    r["BV5"] = f.BV5;
                     r["ts"] = f.ts;
                     r["tt"] = f.tt;
                     r["OPNPRC"] = f.OPNPRC;
@@ -307,7 +340,7 @@ namespace myWindAPI
                         bulk.ColumnMappings.Add("SV7", "SV7");
                         bulk.ColumnMappings.Add("SV8", "SV8");
                         bulk.ColumnMappings.Add("SV9", "SV9");
-                        bulk.ColumnMappings.Add("SV10","SV10");
+                        bulk.ColumnMappings.Add("SV10", "SV10");
                         bulk.ColumnMappings.Add("BV1", "BV1");
                         bulk.ColumnMappings.Add("BV2", "BV2");
                         bulk.ColumnMappings.Add("BV3", "BV3");
@@ -333,7 +366,7 @@ namespace myWindAPI
                         bulk.ColumnMappings.Add("OpenInterest", "OpenInterest");
                         bulk.ColumnMappings.Add("PreOpenInterest", "PreOpenInterest");
                         bulk.ColumnMappings.Add("LocalRecTime", "LocalRecTime");
-                        bulk.ColumnMappings.Add("TradeStatus", "TradeStatus"); 
+                        bulk.ColumnMappings.Add("TradeStatus", "TradeStatus");
                         #endregion
                         bulk.WriteToServer(todayData);
                     }
@@ -353,9 +386,9 @@ namespace myWindAPI
         /// <param name="code">商品代码</param>
         /// <param name="todayData">今日数据</param>
         /// <param name="yesterdayData">昨日数据</param>
-        public void ModifyData(TDBFutureAB[] futureABArr,string code,out commodityShot[] todayData, out commodityShot[] yesterdayData)
+        public void ModifyData(TDBFutureAB[] futureABArr, string code, out bondShot[] todayData, out bondShot[] yesterdayData)
         {
-            commodityShot[] myShotList = new commodityShot[futureABArr.Length];
+            bondShot[] myShotList = new bondShot[futureABArr.Length];
             int todayNum = 0, yesterdayNum = 0;
             for (int i = 0; i < futureABArr.Length; i++)
             {
@@ -364,29 +397,33 @@ namespace myWindAPI
                 int time = future.m_nTime;
                 int date = future.m_nDate;
                 int id = 0;
-                if (time<80000000)
-                {
-                    time += 160000000;
-                    date = TradeDays.GetPreviousTradeDay(date);
-                    yesterdayNum += 1;
-                    //自增编号，对夜盘要做额外的处理，昨日夜盘数据要添加100000
-                    id = 100000 + yesterdayNum;
-                }
-                else
-                {
-                    time -= 80000000;
-                    todayNum += 1;
-                    id = todayNum;
-                }
+                todayNum += 1;
+                id = todayNum;
                 myShotList[i].id = id;
-                myShotList[i].stkcd = code;
+                myShotList[i].stkcd = code+"E";
                 myShotList[i].tdate = date.ToString();
                 myShotList[i].ttime = time.ToString().PadLeft(9, '0');
                 myShotList[i].cp = future.m_nPrice / 10000.0;
                 myShotList[i].S1 = future.m_nAskPrice[0] / 10000.0;
+                myShotList[i].S2 = future.m_nAskPrice[1] / 10000.0;
+                myShotList[i].S3 = future.m_nAskPrice[2] / 10000.0;
+                myShotList[i].S4 = future.m_nAskPrice[3] / 10000.0;
+                myShotList[i].S5 = future.m_nAskPrice[4] / 10000.0;
                 myShotList[i].SV1 = future.m_nAskVolume[0];
+                myShotList[i].SV2 = future.m_nAskVolume[1];
+                myShotList[i].SV3 = future.m_nAskVolume[2];
+                myShotList[i].SV4 = future.m_nAskVolume[3];
+                myShotList[i].SV5 = future.m_nAskVolume[4];
                 myShotList[i].B1 = future.m_nBidPrice[0] / 10000.0;
+                myShotList[i].B2 = future.m_nBidPrice[1] / 10000.0;
+                myShotList[i].B3 = future.m_nBidPrice[2] / 10000.0;
+                myShotList[i].B4 = future.m_nBidPrice[3] / 10000.0;
+                myShotList[i].B5 = future.m_nBidPrice[4] / 10000.0;
                 myShotList[i].BV1 = future.m_nBidVolume[0];
+                myShotList[i].BV2 = future.m_nBidVolume[1];
+                myShotList[i].BV3 = future.m_nBidVolume[2];
+                myShotList[i].BV4 = future.m_nBidVolume[3];
+                myShotList[i].BV5 = future.m_nBidVolume[4];
                 myShotList[i].ts = future.m_iAccVolume;
                 myShotList[i].tt = future.m_iAccTurover;
                 myShotList[i].OPNPRC = future.m_nOpen / 10000.0;
@@ -398,18 +435,11 @@ namespace myWindAPI
                 myShotList[i].lp = future.m_nLow / 10000.0;
                 myShotList[i].OpenInterest = future.m_nPosition;
                 myShotList[i].PreOpenInterest = future.m_nPrePosition;
-                if (time>90000000)
-                {
-                    myShotList[i].TradeStatus = "002";
-                }
-                else
-                {
-                    myShotList[i].TradeStatus = "001";
-                }
+                myShotList[i].TradeStatus = "001";
             }
-            todayData = new commodityShot[todayNum];
-            yesterdayData= new commodityShot[yesterdayNum];
-            if (yesterdayNum==0)
+            todayData = new bondShot[todayNum];
+            yesterdayData = new bondShot[yesterdayNum];
+            if (yesterdayNum == 0)
             {
                 todayData = myShotList;
             }
@@ -427,21 +457,56 @@ namespace myWindAPI
         /// <param name="connectString">连接字符串</param>
         /// <param name="date">日期</param>
         /// <returns>记录数目</returns>
-        public int CountRecordNumber(string tableName, string connectString,int date)
+        public int CountRecordNumber(string tableName, string connectString, int date)
         {
             int num = 0;
             using (SqlConnection conn = new SqlConnection(connectString))
             {
                 conn.Open();//打开数据库  
                 SqlCommand cmd = conn.CreateCommand();
-                cmd.CommandText = "select COUNT(*) from [" + tableName + "] where [tdate]="+date.ToString();
+                cmd.CommandText = "select COUNT(*) from [" + tableName + "] where [tdate]=" + date.ToString();
                 try
                 {
 
                     int number = (int)cmd.ExecuteScalar();
                     if (number > 0)
                     {
-                        num=number;
+                        num = number;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+                }
+                catch (Exception myerror)
+                {
+                    System.Console.WriteLine(myerror.Message);
+                }
+            }
+            return num;
+        }
+
+        /// <summary>
+        /// 获取已存储信息的函数。
+        /// </summary>
+        /// <param name="tableName">数据表</param>
+        /// <param name="connectString">连接字符串</param>
+        /// <returns>记录数目</returns>
+        public int MaxRecordDate(string tableName, string connectString)
+        {
+            int num = 0;
+            using (SqlConnection conn = new SqlConnection(connectString))
+            {
+                conn.Open();//打开数据库  
+                SqlCommand cmd = conn.CreateCommand();
+                cmd.CommandText = "select max(tdate) from [" + tableName + "]";
+                try
+                {
+
+                    int number = Convert.ToInt32(cmd.ExecuteScalar());
+                    if (number > 0)
+                    {
+                        num = number;
                     }
                     else
                     {
@@ -461,13 +526,13 @@ namespace myWindAPI
         /// </summary>
         /// <param name="tableName">表名</param>
         /// <param name="connectString">连接字符串</param>
-        public void CreateTable(string tableName,string connectString)
+        public void CreateTable(string tableName, string connectString)
         {
             using (SqlConnection conn = new SqlConnection(connectString))
             {
                 conn.Open();//打开数据库  
                 SqlCommand cmd = conn.CreateCommand();
-                cmd.CommandText = "CREATE TABLE [dbo].["+tableName+ "]([marketdataid][int] IDENTITY(1, 1) NOT NULL,[id] [int] NOT NULL,[stkcd] [char](11) NOT NULL,[tdate] [char](8) NOT NULL,[ttime] [char](9) NOT NULL,[cp] [decimal](9, 4) NULL,[S1] [decimal](9, 4) NULL,[S2] [decimal](9, 4) NULL,[S3] [decimal](9, 4) NULL,[S4] [decimal](9, 4) NULL,[S5] [decimal](9, 4) NULL,[S6] [decimal](9, 4) NULL,[S7] [decimal](9, 4) NULL,[S8] [decimal](9, 4) NULL,	[S9] [decimal](9, 4) NULL,[S10] [decimal](9, 4) NULL,[B1] [decimal](9, 4) NULL,[B2] [decimal](9, 4) NULL,	[B3] [decimal](9, 4) NULL,[B4] [decimal](9, 4) NULL,[B5] [decimal](9, 4) NULL,[B6] [decimal](9, 4) NULL,	[B7] [decimal](9, 4) NULL,[B8] [decimal](9, 4) NULL,[B9] [decimal](9, 4) NULL,[B10] [decimal](9, 4) NULL,	[SV1] [decimal](10, 0) NULL,[SV2] [decimal](10, 0) NULL,[SV3] [decimal](10, 0) NULL,[SV4] [decimal](10, 0) NULL,[SV5] [decimal](10, 0) NULL,[SV6] [decimal](10, 0) NULL,[SV7] [decimal](10, 0) NULL,[SV8] [decimal](10, 0) NULL,[SV9] [decimal](10, 0) NULL,[SV10] [decimal](10, 0) NULL,[BV1] [decimal](10, 0) NULL,[BV2] [decimal](10, 0) NULL,[BV3] [decimal](10, 0) NULL,[BV4] [decimal](10, 0) NULL,[BV5] [decimal](10, 0) NULL,[BV6] [decimal](10, 0) NULL,[BV7] [decimal](10, 0) NULL,[BV8] [decimal](10, 0) NULL,[BV9] [decimal](10, 0) NULL,[BV10] [decimal](10, 0) NULL,[hp] [decimal](9, 4) NULL,[lp] [decimal](9, 4) NULL,[HighLimit] [decimal](9, 4) NULL,[LowLimit]   [decimal](9, 4) NULL,[ts] [decimal](20, 0) NULL,[tt] [decimal](20, 3) NULL,[OPNPRC] [decimal](9, 4) NULL,	[PRECLOSE] [decimal](9, 4) NULL,[Settle] [decimal](9, 4) NULL,[PrevSettle] [decimal](9, 4) NULL,[CurrDelta]    [int] NULL,[PreDelta] [int] NULL,[OpenInterest] [int] NULL,[PreOpenInterest] [int] NULL,[LocalRecTime]        [char](9) NULL,[TradeStatus] [char](3) NULL,CONSTRAINT[PK_" + tableName + "] PRIMARY KEY NONCLUSTERED([marketdataid] ASC) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]) ON [PRIMARY] CREATE CLUSTERED INDEX[IX_" + tableName + "_TDATE] ON[dbo].[" + tableName + "]([tdate] ASC,[ttime] ASC)WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]";
+                cmd.CommandText = "CREATE TABLE [dbo].[" + tableName + "]([marketdataid][int] IDENTITY(1, 1) NOT NULL,[id] [int] NOT NULL,[stkcd] [char](11) NOT NULL,[tdate] [char](8) NOT NULL,[ttime] [char](9) NOT NULL,[cp] [decimal](9, 4) NULL,[S1] [decimal](9, 4) NULL,[S2] [decimal](9, 4) NULL,[S3] [decimal](9, 4) NULL,[S4] [decimal](9, 4) NULL,[S5] [decimal](9, 4) NULL,[S6] [decimal](9, 4) NULL,[S7] [decimal](9, 4) NULL,[S8] [decimal](9, 4) NULL,	[S9] [decimal](9, 4) NULL,[S10] [decimal](9, 4) NULL,[B1] [decimal](9, 4) NULL,[B2] [decimal](9, 4) NULL,	[B3] [decimal](9, 4) NULL,[B4] [decimal](9, 4) NULL,[B5] [decimal](9, 4) NULL,[B6] [decimal](9, 4) NULL,	[B7] [decimal](9, 4) NULL,[B8] [decimal](9, 4) NULL,[B9] [decimal](9, 4) NULL,[B10] [decimal](9, 4) NULL,	[SV1] [decimal](10, 0) NULL,[SV2] [decimal](10, 0) NULL,[SV3] [decimal](10, 0) NULL,[SV4] [decimal](10, 0) NULL,[SV5] [decimal](10, 0) NULL,[SV6] [decimal](10, 0) NULL,[SV7] [decimal](10, 0) NULL,[SV8] [decimal](10, 0) NULL,[SV9] [decimal](10, 0) NULL,[SV10] [decimal](10, 0) NULL,[BV1] [decimal](10, 0) NULL,[BV2] [decimal](10, 0) NULL,[BV3] [decimal](10, 0) NULL,[BV4] [decimal](10, 0) NULL,[BV5] [decimal](10, 0) NULL,[BV6] [decimal](10, 0) NULL,[BV7] [decimal](10, 0) NULL,[BV8] [decimal](10, 0) NULL,[BV9] [decimal](10, 0) NULL,[BV10] [decimal](10, 0) NULL,[hp] [decimal](9, 4) NULL,[lp] [decimal](9, 4) NULL,[HighLimit] [decimal](9, 4) NULL,[LowLimit]   [decimal](9, 4) NULL,[ts] [decimal](20, 0) NULL,[tt] [decimal](20, 3) NULL,[OPNPRC] [decimal](9, 4) NULL,	[PRECLOSE] [decimal](9, 4) NULL,[Settle] [decimal](9, 4) NULL,[PrevSettle] [decimal](9, 4) NULL,[CurrDelta]    [int] NULL,[PreDelta] [int] NULL,[OpenInterest] [int] NULL,[PreOpenInterest] [int] NULL,[LocalRecTime]        [char](9) NULL,[TradeStatus] [char](3) NULL,CONSTRAINT[PK_" + tableName + "] PRIMARY KEY NONCLUSTERED([marketdataid] ASC) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]) ON [PRIMARY] CREATE CLUSTERED INDEX[IX_" + tableName + "_TDATE] ON[dbo].[" + tableName + "]([tdate] ASC,[ttime] ASC)WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]";
                 try
                 {
                     cmd.ExecuteReader();
@@ -484,13 +549,13 @@ namespace myWindAPI
         /// </summary>
         /// <param name="dataBaseName">需新建的数据库名称</param>
         /// <param name="connectString">连接字符串</param>
-        public void CreateDataBase(string dataBaseName,string connectString)
+        public void CreateDataBase(string dataBaseName, string connectString)
         {
             using (SqlConnection conn = new SqlConnection(connectString))
             {
                 conn.Open();//打开数据库  
                 SqlCommand cmd = conn.CreateCommand();
-                cmd.CommandText = "CREATE DATABASE "+dataBaseName+" ON PRIMARY (NAME = '"+dataBaseName+"', FILENAME = 'G:\\"+dataBaseName+ ".dbf',SIZE = 1024MB,MaxSize = 512000MB,FileGrowth = 1024MB) LOG ON (NAME = '" + dataBaseName + "Log',FileName = 'G:\\" + dataBaseName + ".ldf',Size = 20MB,MaxSize = 1024MB,FileGrowth = 10MB)";
+                cmd.CommandText = "CREATE DATABASE " + dataBaseName + " ON PRIMARY (NAME = '" + dataBaseName + "', FILENAME = 'G:\\" + dataBaseName + ".dbf',SIZE = 1024MB,MaxSize = 512000MB,FileGrowth = 1024MB) LOG ON (NAME = '" + dataBaseName + "Log',FileName = 'G:\\" + dataBaseName + ".ldf',Size = 20MB,MaxSize = 1024MB,FileGrowth = 10MB)";
                 try
                 {
                     cmd.ExecuteReader();
@@ -507,18 +572,18 @@ namespace myWindAPI
         /// </summary>
         /// <param name="market">市场</param>
         /// <returns>商品期货信息列表</returns>
-        public List<commodityFormat> GetCommodityList(string market)
+        public List<bondFormat> GetbondList(string market)
         {
-            List<commodityFormat> myList = new List<commodityFormat>();
+            List<bondFormat> myList = new List<bondFormat>();
             TDBCode[] codeArr;
             tdbSource.GetCodeTable(market, out codeArr);
             foreach (var item in codeArr)
             {
-                commodityFormat myCommodity = new commodityFormat();
+                bondFormat mybond = new bondFormat();
                 string code = item.m_strCode.ToUpper();
-                string date="";
-                myCommodity.contractName = code;
-                if (market=="CZC")
+                string date = "";
+                mybond.contractName = code;
+                if (market == "CZC")
                 {
                     date = MyApplication.RemoveNotNumber(code);
                     date = "1" + date;
@@ -527,21 +592,21 @@ namespace myWindAPI
                 {
                     date = MyApplication.RemoveNotNumber(code);
                 }
-                if (date.Length!=4)
+                if (date.Length != 4)
                 {
                     continue;
                 }
-                if (date.Length==4)
+                if (date.Length == 4)
                 {
                     int num = Convert.ToInt32(date);
-                    if (num>=1304)
+                    if (num >= 1304)
                     {
-                        myCommodity.contractName = code+"."+market;
-                        myCommodity.code = code;
-                        myCommodity.startDate = (num - 100+200000) * 100 + 01;
-                        myCommodity.endDate = (num+200000) * 100 + 31;
-                        myCommodity.market = market;
-                        myList.Add(myCommodity);
+                        mybond.contractName = code + "." + market;
+                        mybond.code = code;
+                        mybond.startDate = (num - 100 + 200000) * 100 + 01;
+                        mybond.endDate = (num + 200000) * 100 + 31;
+                        mybond.market = market;
+                        myList.Add(mybond);
                     }
                 }
             }

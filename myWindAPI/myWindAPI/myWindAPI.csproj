@@ -73,8 +73,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ETFOption.cs" />
     <Compile Include="MyApplication.cs" />
-    <Compile Include="CommodityData.cs" />
+    <Compile Include="CommodityFutures.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="CsvApplication.cs" />
     <Compile Include="Impv.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="TDBDataSource.cs" />
     <Compile Include="TDBVersion.cs" />
     <Compile Include="TradeDays.cs" />
+    <Compile Include="TreasuryBondFutures.cs" />
     <Compile Include="WindDataMethod.cs" />
     <Compile Include="WindTDBData.cs" />
   </ItemGroup>

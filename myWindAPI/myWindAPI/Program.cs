@@ -53,6 +53,12 @@
 时间：2016-04-21
 版本：v1.1.1
 #######################################################
+1、增加国债期货和股指期货的存储。
+2、增加期权的存储。
+作者：毛衡
+时间：2016-04-22
+版本：v1.1.2
+#######################################################
 **/
 
 using System;
@@ -70,9 +76,11 @@ namespace myWindAPI
     {
         static void Main(string[] args)
         {
-            CommodityData myStore1 = new CommodityData("DCE", 20130401, 20160430);
-            CommodityData myStore2 = new CommodityData("CZC", 20130401, 20160430);
-            CommodityData myStore3 = new CommodityData("CFE", 20130401, 20160430);
+            //CommodityFutures myStore1 = new CommodityFutures("DCE", 20151101, 20160430);
+            //CommodityFutures myStore2 = new CommodityFutures("CZC", 20130401, 20160430);
+            //CommodityFutures myStore3 = new CommodityFutures("SHF", 20130401, 20160430);
+            //TreasuryBondFutures myStore4 = new TreasuryBondFutures("CF", 20160401, 20160430);
+            ETFOption myStore5 = new ETFOption("SH", 20150209, 20151231);
         }
     }
 }
