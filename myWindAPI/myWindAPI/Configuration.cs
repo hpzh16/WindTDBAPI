@@ -39,7 +39,9 @@ namespace myWindAPI
         /// <summary>
         /// 提供数据库sql连接字符串信息。
         /// </summary>
-        public static string connectString= "server=(local);database=Option;Integrated Security=true;";
+        //public static string connectString= "server=(local);database=Option;Integrated Security=true;";
+        public static string  connectString = "server=192.168.38.217;database=Option;uid =sa;pwd=maoheng0;";
+
         /// <summary>
         /// 给定期权标的的名称。
         /// </summary>

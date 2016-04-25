@@ -67,14 +67,21 @@ namespace myWindAPI
             {
                 tradeDaysOfDataBase = new List<int>();
             }
+            //从本地CSV文件中读取交易日信息。
+            string CSVName = "tradedays.csv";
+            GetDataFromCSV(CSVName);
             //从本地数据库中读取交易日信息。
-            GetDataFromDataBase();
-            //从万德数据库中读取交易日信息。但仅在数据库没有构造的时候进行读取。并保持到本地数据库。
-            if (tradeDaysOfDataBase.Count == 0 || tradeDaysOfDataBase[tradeDaysOfDataBase.Count - 1] < 20161230)
-            {
-                GetDataFromWindDataBase();
-                SaveTradeDaysData();
-            }
+            //GetDataFromDataBase();
+
+            //SaveTradeDaysDataByCSV(CSVName);
+
+            ////从万德数据库中读取交易日信息。但仅在数据库没有构造的时候进行读取。并保持到本地数据库。
+            //if (tradeDaysOfDataBase.Count == 0 || tradeDaysOfDataBase[tradeDaysOfDataBase.Count - 1] < 20161230)
+            //{
+            //    GetDataFromWindDataBase();
+            //    SaveTradeDaysData();
+            //}
+
             //根据给定的回测开始日期和结束日期，给出交易日列表。
             myTradeDays = new List<int>();
            
@@ -104,6 +111,37 @@ namespace myWindAPI
             GetThirdFriday();
 
         }
+
+        /// <summary>
+        /// 从csv文件中读取交易日信息。
+        /// </summary>
+        /// <param name="CSVName"></param>
+        private void GetDataFromCSV(string CSVName)
+        {
+            DataTable tradeDaysData = CsvApplication.OpenCSV(CSVName);
+            foreach (DataRow r in tradeDaysData.Rows)
+            {
+                tradeDaysOfDataBase.Add(Convert.ToInt32(r["tradedays"]));
+            }
+        }
+
+        /// <summary>
+        /// 将交易日信息存入CSV文件。
+        /// </summary>
+        private void SaveTradeDaysDataByCSV(string CSVName)
+        {
+            DataTable tradeDaysData = new DataTable();
+            tradeDaysData.Columns.Add("tradedays", typeof(int));
+            foreach (int date in tradeDaysOfDataBase)
+            {
+                DataRow r = tradeDaysData.NewRow();
+                r["tradedays"] = date;
+                tradeDaysData.Rows.Add(r);
+            }
+            CsvApplication.SaveCSV(tradeDaysData, CSVName);
+
+        }
+
 
         /// <summary>
         /// 从本地数据库中读取交易日信息的函数。

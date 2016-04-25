@@ -12,7 +12,7 @@ namespace myWindAPI
     struct ETFOptionShot
     {
         public int id, CurrDelta, PreDelta, OpenInterest, PreOpenInterest;
-        public string stkcd, tdate, ttime, LocalRecTime, TradeStatus;
+        public string stkcd, tdate,ndate, ttime, LocalRecTime, TradeStatus;
         public double cp, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SV8, SV9, SV10, BV1, BV2, BV3, BV4, BV5, BV6, BV7, BV8, BV9, BV10, hp, lp, HighLimit, LowLimit, ts, tt, OPNPRC, PRECLOSE, Settle, PrevSettle;
     }
 
@@ -35,7 +35,7 @@ namespace myWindAPI
     struct bondShot
     {
         public int id, CurrDelta, PreDelta, OpenInterest, PreOpenInterest;
-        public string stkcd, tdate, ttime, LocalRecTime, TradeStatus;
+        public string stkcd, tdate, ndate,ttime, LocalRecTime, TradeStatus;
         public double cp, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SV8, SV9, SV10, BV1, BV2, BV3, BV4, BV5, BV6, BV7, BV8, BV9, BV10, hp, lp, HighLimit, LowLimit, ts, tt, OPNPRC, PRECLOSE, Settle, PrevSettle;
     }
 
@@ -59,7 +59,7 @@ namespace myWindAPI
     struct commodityShot
     {
         public int id,CurrDelta,PreDelta,OpenInterest,PreOpenInterest;
-        public string stkcd, tdate, ttime,LocalRecTime,TradeStatus;
+        public string stkcd, tdate,ndate,ttime,LocalRecTime,TradeStatus;
         public double cp, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SV8, SV9, SV10, BV1, BV2, BV3, BV4, BV5, BV6, BV7, BV8, BV9, BV10, hp, lp, HighLimit, LowLimit, ts, tt, OPNPRC, PRECLOSE, Settle, PrevSettle;
     }
     
