@@ -66,6 +66,11 @@
 时间：2016-04-25
 版本：v1.1.3
 #######################################################
+1、部分bug处理。
+作者：毛衡
+时间：2016-04-26
+版本：v1.1.4
+#######################################################
 **/
 
 using System;
@@ -83,11 +88,11 @@ namespace myWindAPI
     {
         static void Main(string[] args)
         {
-            CommodityFutures myStore1 = new CommodityFutures("DCE", 20130401, 20160430);
+            //CommodityFutures myStore1 = new CommodityFutures("DCE", 20130401, 20160430);
             //CommodityFutures myStore2 = new CommodityFutures("CZC", 20130401, 20160430);
             //CommodityFutures myStore3 = new CommodityFutures("SHF", 20130401, 20160430);
-            //TreasuryBondFutures myStore4 = new TreasuryBondFutures("CF", 20160401, 20160430);
-            //ETFOption myStore5 = new ETFOption("SH", 20150209, 20151231);
+            //TreasuryBondFutures myStore4 = new TreasuryBondFutures("CF", 20130401, 20160430);
+            ETFOption myStore5 = new ETFOption("SH", 20150209, 20151231);
         }
     }
 }

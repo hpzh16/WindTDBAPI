@@ -111,7 +111,11 @@ namespace myWindAPI
                     string todayDataBase = "TradeMarket" + (today / 100).ToString();
                    // string todayConnectString = "server=(local);database=" + todayDataBase + ";Integrated Security=true;";
                     string todayConnectString = "server=192.168.38.217;database=" + todayDataBase + ";uid =sa;pwd=maoheng0;";
-                    if (yesterday / 100 != today / 100 || today == startDate || maxRecordDate==0)
+                    if (SqlApplication.CheckDataBaseExist(todayDataBase,orignalConnectString)==false)
+                    {
+                        maxRecordDate = 0;
+                    }
+                    else if (yesterday / 100 != today / 100 || today == startDate || maxRecordDate==0)
                     {
                         if (SqlApplication.CheckExist(todayDataBase,tableName,todayConnectString)==true)
                         {
@@ -129,9 +133,9 @@ namespace myWindAPI
                         {
                             continue;
                         }
-                        string yesterdayDataBase = "TradeMarket"+(yesterday/100).ToString();
+                        //string yesterdayDataBase = "TradeMarket"+(yesterday/100).ToString();
                         //string yesterdayConnectString = "server=(local);database=" + yesterdayDataBase + ";Integrated Security=true;";
-                        string yesterdayConnectString = "server=192.168.38.217;database=" + yesterdayDataBase + ";uid =sa;pwd=maoheng0;";
+                        //string yesterdayConnectString = "server=192.168.38.217;database=" + yesterdayDataBase + ";uid =sa;pwd=maoheng0;";
                         if (SqlApplication.CheckDataBaseExist(todayDataBase,orignalConnectString)==false)
                             //检测当日对应的数据库是否存在
                         {
@@ -141,22 +145,22 @@ namespace myWindAPI
                         {
                             CreateTable(tableName, todayConnectString);
                         }
-                        if (yesterdayDataBase!=todayDataBase)
-                            //如果前一交易日所在月份和当日不同，检测上一个月的数据库是否存在
-                        {
-                            if (SqlApplication.CheckDataBaseExist(yesterdayDataBase, orignalConnectString) == false)
-                            {
-                                CreateDataBase(yesterdayDataBase, orignalConnectString);
-                            }
-                            if (SqlApplication.CheckExist(yesterdayDataBase, tableName, orignalConnectString) == false)
-                            {
-                                CreateTable(tableName, yesterdayConnectString);
-                            }
-                        }
+                        //if (yesterdayDataBase!=todayDataBase)
+                        //    //如果前一交易日所在月份和当日不同，检测上一个月的数据库是否存在
+                        //{
+                        //    if (SqlApplication.CheckDataBaseExist(yesterdayDataBase, orignalConnectString) == false)
+                        //    {
+                        //        CreateDataBase(yesterdayDataBase, orignalConnectString);
+                        //    }
+                        //    if (SqlApplication.CheckExist(yesterdayDataBase, tableName, orignalConnectString) == false)
+                        //    {
+                        //        CreateTable(tableName, yesterdayConnectString);
+                        //    }
+                        //}
                         //判断数据是否已经存储，若数据存在，默认已经记录，仅记录数据条数，写入日志文档，靠人工来校对
                         // int alreadyRecord = CountRecordNumber(tableName, todayConnectString, today);
                         commodityShot[] dataList= ModifyData(futureABArr, commodity.contractName, today);
-                        StoreDataDaily(tableName, yesterdayConnectString, dataList);
+                        StoreDataDaily(tableName, todayConnectString, dataList);
                         Console.WriteLine("Date:{0}, table:{1}, MaxRecordDate:{2}, Wind:{3}", today, tableName,maxRecordDate, futureABArr.Length);
                         string log = "Date:" + today.ToString() + ", table:" + tableName + ", MaxRecordDate:" + maxRecordDate.ToString() + ", Wind:" + futureABArr.Length.ToString();
                         MyApplication.TxtWrite(logName, log);
