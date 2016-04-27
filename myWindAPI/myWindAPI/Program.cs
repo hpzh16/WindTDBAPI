@@ -23,7 +23,7 @@
 版本：v1.0.2
 #######################################################
 1、将整理好的TDB期权数据存入本地数据库。
-2、修正了duration的数据格式，是的其更贴近现实。
+2、修正了duration的数据格式，使得其更贴近现实。
 作者：毛衡
 时间：2016-03-09
 版本：v1.0.3
@@ -91,8 +91,8 @@ namespace myWindAPI
             //CommodityFutures myStore1 = new CommodityFutures("DCE", 20130401, 20160430);
             //CommodityFutures myStore2 = new CommodityFutures("CZC", 20130401, 20160430);
             //CommodityFutures myStore3 = new CommodityFutures("SHF", 20130401, 20160430);
-            //TreasuryBondFutures myStore4 = new TreasuryBondFutures("CF", 20130401, 20160430);
-            ETFOption myStore5 = new ETFOption("SH", 20150209, 20151231);
+            TreasuryBondFutures myStore4 = new TreasuryBondFutures("CF", 20130401, 20160430);
+            //ETFOption myStore5 = new ETFOption("SH", 20150209, 20151231);
         }
     }
 }

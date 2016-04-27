@@ -14,8 +14,8 @@ namespace myWindAPI
         /// <summary>
         /// 未指定数据库名称的连接字符串
         /// </summary>
-        public string orignalConnectString = "server=(local);database=;Integrated Security=true;";
-        //public string orignalConnectString = "server=192.168.38.217;database=;uid =sa;pwd=maoheng0;";
+        //public string orignalConnectString = "server=(local);database=;Integrated Security=true;";
+        public string orignalConnectString = "server=192.168.38.217;database=;uid =sa;pwd=maoheng0;";
         /// <summary>
         /// 连接万德商品期货TDB数据库的参数。
         /// </summary>
@@ -109,8 +109,8 @@ namespace myWindAPI
                     }
                     int yesterday = TradeDays.GetPreviousTradeDay(today);
                     string todayDataBase = "TradeMarket" + (today / 100).ToString();
-                    string todayConnectString = "server=(local);database=" + todayDataBase + ";Integrated Security=true;";
-                   // string todayConnectString = "server=192.168.38.217;database=" + todayDataBase + ";uid =sa;pwd=maoheng0;";
+                   // string todayConnectString = "server=(local);database=" + todayDataBase + ";Integrated Security=true;";
+                    string todayConnectString = "server=192.168.38.217;database=" + todayDataBase + ";uid =sa;pwd=maoheng0;";
                     if (SqlApplication.CheckDataBaseExist(todayDataBase,orignalConnectString)==false)
                     {
                         maxRecordDate = 0;

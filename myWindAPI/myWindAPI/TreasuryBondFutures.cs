@@ -116,7 +116,7 @@ namespace myWindAPI
                     {
                         maxRecordDate = 0;
                     }
-                    if (yesterday / 100 != today / 100 || today == startDate || maxRecordDate == 0)
+                    else if (yesterday / 100 != today / 100 || today == startDate || maxRecordDate == 0)
                     {
                         if (SqlApplication.CheckExist(todayDataBase, tableName, todayConnectString) == true)
                         {
@@ -552,7 +552,7 @@ namespace myWindAPI
             {
                 conn.Open();//打开数据库  
                 SqlCommand cmd = conn.CreateCommand();
-                cmd.CommandText = "CREATE DATABASE " + dataBaseName + " ON PRIMARY (NAME = '" + dataBaseName + "', FILENAME = 'G:\\" + dataBaseName + ".dbf',SIZE = 1024MB,MaxSize = 512000MB,FileGrowth = 1024MB) LOG ON (NAME = '" + dataBaseName + "Log',FileName = 'G:\\" + dataBaseName + ".ldf',Size = 20MB,MaxSize = 1024MB,FileGrowth = 10MB)";
+                cmd.CommandText = "CREATE DATABASE " + dataBaseName + " ON PRIMARY (NAME = '" + dataBaseName + "', FILENAME = 'E:\\" + dataBaseName + ".dbf',SIZE = 1024MB,MaxSize = 512000MB,FileGrowth = 1024MB) LOG ON (NAME = '" + dataBaseName + "Log',FileName = 'E:\\" + dataBaseName + ".ldf',Size = 20MB,MaxSize = 1024MB,FileGrowth = 10MB)";
                 try
                 {
                     cmd.ExecuteReader();
